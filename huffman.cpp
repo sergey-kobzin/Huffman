@@ -160,8 +160,10 @@ void traverseHuffmanTree(Node* huffmanTree, vector<bool> & code, map<char, vecto
         code.push_back(1);
         traverseHuffmanTree(huffmanTree->right, code, huffmanTable);
     }
-    if (char ch = huffmanTree->ch)
+    if ((!huffmanTree->left) && (!huffmanTree->right)) {
+        char ch = huffmanTree->ch;
         (*huffmanTable)[ch] = code;
+    }
     code.pop_back();
 }
 
@@ -207,7 +209,8 @@ void createCompressedFile(char* inputFileName, char* outputFileName, map<char, v
     ofstream* outputFileStream = openOutputFile(outputFileName);
 
     // Save the size of the Huffman table to the output file
-    outputFileStream->put(huffmanTable->size());
+    int tableSize = huffmanTable->size();
+    outputFileStream->write((char*) &tableSize, sizeof(int));
 
     // Save the Huffman table to the output file (6 bytes for each element)
     for (map<char, vector<bool> >::iterator iter = huffmanTable->begin(); iter != huffmanTable->end(); iter++) {
@@ -255,8 +258,8 @@ map<vector<bool>, char>* restoreHuffmanTable(char* inputFileName) {
     ifstream* inputFileStream = openInputFile(inputFileName);
 
     // Read the table size from the input file
-    char tableSize = 0;
-    inputFileStream->get(tableSize);
+    int tableSize = 0;
+    inputFileStream->read((char*)&tableSize, sizeof(int));
 
     // Read the Huffman table from the input file(6 bytes for each element)
     for (int i = 0; i < tableSize; i++) {
@@ -292,8 +295,8 @@ map<vector<bool>, char>* restoreHuffmanTable(char* inputFileName) {
 void createDecompressedFile(char* inputFileName, char* outputFileName, map<vector<bool>, char>* huffmanTable) {
     // Open the input file and jump over the saved Huffman table at the file beginning
     ifstream* inputFileStream = openInputFile(inputFileName);
-    char tableSize = huffmanTable->size();
-    inputFileStream->seekg(tableSize * 6 + 1);
+    int tableSize = huffmanTable->size();
+    inputFileStream->seekg(tableSize * 6 + 4);
 
     // Read the buffer size form the input file
     unsigned int bufferSize = 0;
@@ -356,6 +359,7 @@ void decompressFile(char* inputFileName, char* outputFileName) {
     createDecompressedFile(inputFileName, outputFileName, huffmanTable);
     std::cout << "ready" << std::endl;
 }
+
 
 int main(int argc, char* argv[]) {
     if (argc != 4) {
